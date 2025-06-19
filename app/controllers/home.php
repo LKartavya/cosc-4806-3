@@ -1,13 +1,14 @@
 <?php
+session_start();
 
-class Home extends Controller {
-
+class HomeController {
     public function index() {
-      $user = $this->model('User');
-      $data = $user->test();
-			
-	    $this->view('home/index');
-	    die;
-    }
+        if (!isset($_SESSION['auth'])) {
+            header('Location: /views/login.php');
+            exit;
+        }
 
+        include '../views/home.php';
+    }
 }
+
