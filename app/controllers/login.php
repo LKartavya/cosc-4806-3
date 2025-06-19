@@ -1,34 +1,17 @@
 <?php
-session_start();
-require_once '../core/db_connect.php';
-require_once '../models/User.php';
 
-	class LoginController {
-	public function login() {
-			$username = $_POST['username'] ?? '';
-			$password = $_POST['password'] ?? '';
+class Login extends Controller {
 
-			$user = new User();
-			$result = $user->authenticate($username, $password);
-			echo $result;
-	}
+		public function index() {		
+			$this->view('login/index');
+		}
 
-	public function create() {
-			include '../views/register.php';
-	}
+		public function verify(){
+			$username = $_REQUEST['username'];
+			$password = $_REQUEST['password'];
 
-	public function store() {
-			$username = $_POST['username'];
-			$password = password_hash($_POST['password'], PASSWORD_DEFAULT);
-
-			$db = db_connect();
-			$stmt = $db->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
-			$stmt->bindValue(':username', strtolower($username));
-			$stmt->bindValue(':password', $password);
-			$stmt->execute();
-
-			header('Location: /views/login.php');
-			exit;
-	}
+			$user = $this->model('User');
+			$user->authenticate($username, $password); 
+		}
 
 }

@@ -6,69 +6,59 @@ class User {
     public $password;
     public $auth = false;
 
-    public function __construct() {
-        
+    public function create($username, $password) {
+        $db = db_connect();
+        $username = strtolower($username);
+        $hashed = password_hash($password, PASSWORD_DEFAULT);
+        $statement = $db->prepare("INSERT INTO users (username, password) VALUES (:username, :password)");
+        $statement->bindValue(':username', $username);
+        $statement->bindValue(':password', $hashed);
+        $statement->execute();
+        return true;
     }
-
-    public function test () {
-      $db = db_connect();
-      $statement = $db->prepare("select * from users;");
-      $statement->execute();
-      $rows = $statement->fetch(PDO::FETCH_ASSOC);
-      return $rows;
-    }
-
+    
     public function authenticate($username, $password) {
-      $db = db_connect();
-      $username = strtolower($username);
+    $username = strtolower($username);
+        $db = db_connect();
 
-      $stmt = $db->prepare("SELECT * FROM users WHERE username = :name");
-      $stmt->bindValue(':name', $username);
-      $stmt->execute();
-      $user = $stmt->fetch(PDO::FETCH_ASSOC);
-      
-		$username = strtolower($username);
-		$db = db_connect();
+        // Check lockout
+        if (isset($_SESSION['lockout_until']) && time() < $_SESSION['lockout_until']) {
+            // Log the locked-out attempt
+            $log = new Log();
+            $log->add($username, 'locked');
+            header('Location: /login?locked=1');
+            die;
+        }
+
         $statement = $db->prepare("select * from users WHERE username = :name;");
         $statement->bindValue(':name', $username);
         $statement->execute();
         $rows = $statement->fetch(PDO::FETCH_ASSOC);
-		
-  if (isset($_SESSION['failedAuth']) && $_SESSION['failedAuth'] >= 3) {
-      $lastAttempt = $_SESSION['lastFailed'] ?? 0;
-      if (time() - $lastAttempt < 60) {
-          return "Locked out. Try again in " . (60 - (time() - $lastAttempt)) . " seconds.";
-      } else {
-          $_SESSION['failedAuth'] = 0;
-      }
-  }
 
-  $attemptTime = date("Y-m-d H:i:s");
-  if ($user && password_verify($password, $user['password'])) {
-      $_SESSION['auth'] = true;
-      $_SESSION['username'] = ucwords($username);
-      unset($_SESSION['failedAuth']);
-      $this->logAttempt($username, 'good', $attemptTime);
-      header('Location: /views/home.php');
-      exit;
-  } else {
-      $_SESSION['failedAuth'] = ($_SESSION['failedAuth'] ?? 0) + 1;
-      $_SESSION['lastFailed'] = time();
-      $this->logAttempt($username, 'bad', $attemptTime);
-      header('Location: /views/login.php');
-      exit;
-  }
-     
+        $log = new Log();
 
+        if ($rows && password_verify($password, $rows['password'])) {
+            $_SESSION['auth'] = 1;
+            $_SESSION['username'] = ucwords($username);
+            unset($_SESSION['failedAuth']);
+            unset($_SESSION['lockout_until']);
+            $log->add($username, 'good');
+            header('Location: /home');
+            die;
+        } else {
+            $log->add($username, 'bad');
+            if(isset($_SESSION['failedAuth'])) {
+                $_SESSION['failedAuth']++;
+            } else {
+                $_SESSION['failedAuth'] = 1;
+            }
+            // Lockout after 3 failed attempts
+            if ($_SESSION['failedAuth'] >= 3) {
+                $_SESSION['lockout_until'] = time() + 60;
+            }
+            header('Location: /login?fail=1');
+            die;
+        }
+    }
 
-}
-  private function logAttempt($username, $result, $time) {
-      $db = db_connect();
-      $stmt = $db->prepare("INSERT INTO log (username, attempt, time) VALUES (:username, :attempt, :time)");
-      $stmt->execute([
-          ':username' => $username,
-          ':attempt' => $result,
-          ':time' => $time
-      ]);
-  }
 }

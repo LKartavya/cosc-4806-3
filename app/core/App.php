@@ -10,10 +10,8 @@ class App {
     public function __construct() {
         if (isset($_SESSION['auth']) == 1) {
             //$this->method = 'index';
-           
-            $this->controller = home; // Now 'HomeController'
-
-        }  
+            $this->controller = 'home';
+        } 
 
         // This will return a broken up URL
         // it will be /controller/method
@@ -56,9 +54,6 @@ class App {
             }
         }
 
-        
-
-
         // This will rebase the params to a new array (starting at 0)
         // if params exist
         $this->params = $url ? array_values($url) : [];
@@ -66,11 +61,11 @@ class App {
     }
 
     public function parseUrl() {
-        $url = "{$_SERVER['REQUEST_URI']}";
+        $u = "{$_SERVER['REQUEST_URI']}";
         //trims the trailing forward slash (rtrim), sanitizes URL, explode it by forward slash to get elements
-        $u = explode('/', filter_var(rtrim($u, '/'), FILTER_SANITIZE_URL));
-		unset($url[0]);
-		return $url;
+        $url = explode('/', filter_var(rtrim($u, '/'), FILTER_SANITIZE_URL));
+        unset($url[0]);
+        return $url;
     }
 
 }
