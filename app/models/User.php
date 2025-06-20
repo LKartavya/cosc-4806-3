@@ -18,6 +18,12 @@ class User {
       return $rows;
     }
 
+    public function find($username, $pdo){
+        $stmt = $pdo->prepare("SELECT * FROM users WHERE username = ?");
+        $stmt->execute([$username]);
+        return $stmt->fetch();
+    }
+
     public function authenticate($username, $password) {
         /*
          * if username and password good then

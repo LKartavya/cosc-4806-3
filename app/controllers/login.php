@@ -1,5 +1,6 @@
 <?php
 require '../app/database.php';
+
 class Login extends Controller {
 	
 		public function index() {
@@ -23,7 +24,7 @@ class Login extends Controller {
 										return;
 								}
 						}
-						$user = $this->loadModel("User")->find($username);
+						$user = $this->loadModel("User")->find($username, $pdo);
 						if ($user && password_verify($password, $user->password)) {
 								$_SESSION['user'] = $user;
 								$this->logAttempt($username, 'good', $pdo);
