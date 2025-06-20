@@ -16,7 +16,10 @@ class Login extends Controller {
 		}
 
 	public function getFailedAttempts($username, $pdo){
-			$statement = $pdo->prepare("select count * from failed_attempts WHERE username = :name;");
+			$statement = $pdo->prepare("SELECT COUNT(*) as fail_count, MAX(attempt_time) as last_attempt 
+		 FROM login_attempts 
+		 WHERE username = ? AND status = 'bad' 
+		 AND attempt_time > (NOW() - INTERVAL 5 MINUTE)");
 			$statement->bindValue(':name', $username);
 			$statement->execute();
 			$rows = $statement->fetch(PDO::FETCH_ASSOC);
