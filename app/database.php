@@ -1,8 +1,7 @@
 <?php
 
-/* database connection stuff here
- * 
- */
+$host = '3y6cb.h.filess.io';
+$db = 'COSC4806_rollsettle';
 
 function db_connect() {
     try { 
